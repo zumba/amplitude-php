@@ -94,10 +94,10 @@ class Amplitude
      */
     public static function getInstance($instanceName = 'default')
     {
-        if (empty(static::$instances[$instanceName])) {
-            static::$instances[$instanceName] = new static();
+        if (empty(self::$instances[$instanceName])) {
+            self::$instances[$instanceName] = new static();
         }
-        return static::$instances[$instanceName];
+        return self::$instances[$instanceName];
     }
 
     /**
@@ -265,7 +265,7 @@ class Amplitude
             throw new \LogicException(static::EXCEPTION_MSG_NO_USER_OR_DEVICE);
         }
 
-        $result = $this->sendEvent();
+        $this->sendEvent();
 
         // Reset the event for next call
         $this->resetEvent();

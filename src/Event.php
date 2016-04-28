@@ -1,6 +1,43 @@
 <?php
 namespace Zumba\Amplitude;
 
+/**
+ * Event object, used to make a consistent interface and serialization of the event JSON used in Amplitude API calls
+ *
+ * To maintain better parity with the official Amplitude HTTP API, can set the built in properties using underscored
+ * name (e.g. user_id instead of userId), though camelcase is recommended for better looking code.
+ *
+ * @property string $userId
+ * @property string $deviceId
+ * @property string $eventType
+ * @property int $time
+ * @property array $eventProperties Any values set that do not match built-in property will be set in this array
+ * @property array $userProperties
+ * @property string $appVersion
+ * @property string $platform
+ * @property string $osName
+ * @property string $osVersion
+ * @property string $deviceBrand
+ * @property string $deviceManufacturer
+ * @property string $deviceModel
+ * @property string $deviceType
+ * @property string $carrier
+ * @property string $country
+ * @property string $region
+ * @property string $city
+ * @property string $dma
+ * @property string $language
+ * @property float $price
+ * @property int $quantity
+ * @property float $revenue
+ * @property string $productId
+ * @property string $revenueType
+ * @property float $locationLat
+ * @property float $locationLng
+ * @property string $ip
+ * @property string $idfa
+ * @property string $adid
+ */
 class Event implements \JsonSerializable
 {
     /**
@@ -12,6 +49,9 @@ class Event implements \JsonSerializable
 
     /**
      * Array of built-in properties used for events, and the data type for each one.
+     *
+     * The name used here is what is expected by the Amplitude HTTP API, and how the data will be stored internally,
+     * however these can be set/retrieved using camelcase.
      *
      * @var array
      */
