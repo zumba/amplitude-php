@@ -69,6 +69,17 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($amplitude, $result, 'Should return itself');
     }
 
+    public function testEvent()
+    {
+        $event = new Event();
+        $amplitude = new Amplitude();
+        $newEvent = $amplitude->event();
+        $this->assertNotSame($newEvent, $event, 'Initialization check');
+        $amplitude->event($event);
+        $this->assertSame($event, $amplitude->event(), 'Event passed in should persist until it is used or reset');
+        $this->assertNotSame($newEvent, $event, 'Should not keep using old event if pass in a new one');
+    }
+
     public function testLogEvent()
     {
         $props = ['event property' => 'value'];
