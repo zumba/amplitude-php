@@ -278,7 +278,8 @@ class Event implements \JsonSerializable
      * @param string $name
      * @return string
      */
-    protected function normalize($name) {
+    protected function normalize($name)
+    {
         if (isset($this->availableVars[$name])) {
             return $name;
         }

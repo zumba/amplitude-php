@@ -83,7 +83,7 @@ class Amplitude
      *
      * // Elsewhere in your app, this could happen before OR after the above initialization...
      * // See queueEvent() for more info
-     * Zumba\Amplitude\Amplitude::getInstance->queueEvent(
+     * Zumba\Amplitude\Amplitude::getInstance()->queueEvent(
      *     'VEHICLE CREATED EVENT',
      *     ['wheels' => '2', 'name' => 'bicycle']
      * );

@@ -1,7 +1,8 @@
 <?php
 namespace Zumba\Amplitude;
 
-class Inflector {
+class Inflector
+{
     /**
      * All inflections are cached here to prevent overhead from multiple calls for the same conversion.
      *
@@ -17,7 +18,8 @@ class Inflector {
      * @param string $value The converted value (used to set)
      * @return string The converted value
      */
-    protected static function cache($method, $key, $value = null) {
+    protected static function cache($method, $key, $value = null)
+    {
         if (is_null($value)) {
             $value = isset(static::$cache[$method][$key]) ? static::$cache[$method][$key] : null;
         } else {
@@ -33,7 +35,8 @@ class Inflector {
      * @param string $value A camelCasedString
      * @return string An underscored_string
      */
-    public static function underscore($value = '') {
+    public static function underscore($value = '')
+    {
         $result = static::cache(__FUNCTION__, $value);
         if (!$result) {
             $result = strtolower(preg_replace('/([A-Z])/', '_\1', $value));
@@ -50,7 +53,8 @@ class Inflector {
      * @return string A camelCased string
      * @static
      */
-    public static function camelCase($value = '') {
+    public static function camelCase($value = '')
+    {
         $result = static::cache(__FUNCTION__, $value);
         if (!$result) {
             $newValue = ucwords(str_replace('_', ' ', $value));
