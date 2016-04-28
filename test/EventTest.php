@@ -95,6 +95,17 @@ class EventTest extends \PHPUnit_Framework_TestCase
         );
     }
 
+    public function testSetCasting()
+    {
+        $event = new Event();
+        $event->set('quantity', '10.5');
+        $event->set('price', '1234.350');
+
+        $eventData = $event->toArray();
+        $this->assertSame(10, $eventData['quantity']);
+        $this->assertSame(1234.35, $eventData['price']);
+    }
+
     /**
      * @dataProvider getDataProvider
      */
@@ -157,5 +168,37 @@ class EventTest extends \PHPUnit_Framework_TestCase
                 'Get not-built-in property in event_properties without changing name',
             ],
         ];
+    }
+
+    public function testUnsetProperty()
+    {
+        $event = new Event();
+        $event->set('custom prop', 'value');
+        $event->userId = 'user';
+        $event->quantity = 50;
+        $event->userProperties = ['prop' => 'value'];
+        $this->assertEquals(
+            [
+                'event_properties' => ['custom prop' => 'value'],
+                'user_id' => 'user',
+                'quantity' => 50,
+                'user_properties' => ['prop' => 'value']
+            ],
+            $event->toArray(),
+            'Initialization Check'
+        );
+        // Should just not care if not set...
+        $event->unsetProperty('invalid');
+        unset($event->invalid);
+
+        // Should be able to successfully unset custom property
+        $this->assertNotEmpty($event->get('custom prop'), 'Initialization check');
+        $event->unsetProperty('custom prop');
+        $this->assertEmpty($event->get('custom prop'), 'Should be able to unset custom properties');
+
+        // also should work with magic methods
+        $this->assertNotEmpty($event->userId, 'Initialization check');
+        unset($event->userId);
+        $this->assertEmpty($event->userId, 'Should unset built-in properties with magic unset');
     }
 }
