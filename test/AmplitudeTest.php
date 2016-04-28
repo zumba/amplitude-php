@@ -295,7 +295,7 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
 
         $amplitude->queueEvent('Queued Event');
 
-        $amplitude->init('API','USER')
+        $amplitude->init('API', 'USER')
             ->setOptOut(true)
             ->logQueuedEvents();
 

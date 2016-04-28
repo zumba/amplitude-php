@@ -72,12 +72,14 @@ class EventTest extends \PHPUnit_Framework_TestCase
     {
         $event = new Event();
 
-        $event->set([
-            'deviceId' => 'device',
-            'user_id' => 'user',
-            'product_id' => 'product',
-            'some property' => 'some value',
-        ]);
+        $event->set(
+            [
+                'deviceId' => 'device',
+                'user_id' => 'user',
+                'product_id' => 'product',
+                'some property' => 'some value',
+            ]
+        );
         $expected = [
             'device_id' => 'device',
             'user_id' => 'user',
