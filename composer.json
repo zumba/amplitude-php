@@ -1,0 +1,30 @@
+{
+    "name": "zumba/amplitude-php",
+    "description": "PHP SDK for Amplitude",
+    "keywords": ["amplitude", "sdk", "analytics", "tracking"],
+    "homepage": "https://github.com/zumba/amplitude-php",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Zumba Fitness, LLC",
+            "homepage": "https://tech.zumba.com"
+        },
+        {
+            "name": "Jonathan Foote",
+            "email": "jonathan.foote@zumba.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "4.8.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Zumba\\Amplitude\\": "./src/",
+            "Zumba\\Amplitude\\Test\\": "./test/"
+        }
+    }
+}
