@@ -324,7 +324,7 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
 
         $userProps2 = ['dob' => 'yesterday', 'name' => 'Baby'];
         $expected = [
-            'dob' => 'yesterday',
+            'dob' => 'tomorrow',
             'gender' => 'f',
             'name' => 'Baby',
         ];
@@ -332,7 +332,7 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
         $this->assertSame(
             $expected,
             $amplitude->getUserProperties(),
-            'Second call to addUserProperties should overwrite properties with same-name but keep everything else intact'
+            'Second call to addUserProperties should only add new properties, not overwrite existing'
         );
     }
 }

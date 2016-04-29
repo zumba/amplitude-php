@@ -103,12 +103,17 @@ class Event implements \JsonSerializable
     /**
      * Add user properties
      *
+     * If called multiple times, the first time a user property is set will take precedence.
+     *
+     * If need to overwrite a property already set, you can manipulate $event->userProperties array directly
+     *
      * @param array $userProperties
+     * @return \Zumba\Amplitude\Event
      */
     public function addUserProperties(array $userProperties)
     {
         $props = !empty($this->userProperties) ? $this->userProperties : [];
-        $this->userProperties = array_merge($props, $userProperties);
+        $this->userProperties = $props + $userProperties;
         return $this;
     }
 

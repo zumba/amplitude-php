@@ -348,15 +348,19 @@ class Amplitude
     /**
      * Add user properties, will be sent with the next event sent to Amplitude
      *
-     * If user properties are added to the event directly, these will be merged onto the event's user properties.
+     * If user properties are added to the event directly, these will be added on top, so the properties set directly
+     * on the Event object would take precedence.
      *
-     * If no events are logged after this point, it will not get sent to Amplitude
+     * If this is called multiple times before an event is sent, later calls will only add to the array, it will not
+     * overwrite values already set if no events have been sent yet.
+     *
+     * Note that if no events are logged after this point, it will not get sent to Amplitude
      *
      * @param array $userProperties
      */
     public function addUserProperties(array $userProperties)
     {
-        $this->userProperties = array_merge($this->userProperties, $userProperties);
+        $this->userProperties = $this->userProperties + $userProperties;
         return $this;
     }
 
