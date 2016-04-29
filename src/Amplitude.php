@@ -252,9 +252,7 @@ class Amplitude
             $event->deviceId = $this->deviceId;
         }
         if (!empty($this->userProperties)) {
-            $props = !empty($event->userProperties) ? $event->userProperties : [];
-            $props = array_merge($props, $this->userProperties);
-            $event->userProperties = $props;
+            $event->addUserProperties($this->userProperties);
             $this->resetUserProperties();
         }
 
@@ -348,9 +346,11 @@ class Amplitude
     }
 
     /**
-     * Set the user properties, will be sent with the next event sent to Amplitude
+     * Add user properties, will be sent with the next event sent to Amplitude
      *
-     * If no events are logged, it will not get sent to Amplitude
+     * If user properties are added to the event directly, these will be merged onto the event's user properties.
+     *
+     * If no events are logged after this point, it will not get sent to Amplitude
      *
      * @param array $userProperties
      */
