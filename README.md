@@ -88,6 +88,96 @@ if ($canLogEvents) {
 \Zumba\Amplitude\Amplitude::getInstance()->queueEvent('EVENT');
 
 ```
+
+# User Properties
+There is one main way to set user properties, and this will send the user properties with the next Amplitude event sent to Amplitude:
+```php
+\Zumba\Amplitude\Amplitude::getInstance()
+    ->addUserProperties(
+        [
+            'name' => 'Jane',
+            'dob' => $dob,
+            // ...
+        ]
+    );
+```
+You would typically call this right before calling `logQueuedEvents()` to make sure it gets sent with the first queued event (if there are any events).
+
+Using this method, it only sends the user information with one event, since once a user property is set in Amplitude it persists for all events that match the user ID or event ID.
+
+Also note that if there happens to be no events sent after `addUserProperties()` are sent, those properties will not get sent to Amplitude.
+
+One option, is to use a login event that adds the user info when the user has logged in, and sends it in a login event.  That way you only send user properties for the page load that the user logs in.
+
+Alternatively, just add the user properties with every page load when initializing the Amplitude object.  This is the option used in the examples.
+
+## Adding User Properties on Event Object
+Another option for setting the user properties, is setting them on the Event object itself.  You can do this by setting `userProperties`, or by using the `addUserProperties()` method on the `Event` object.
+
+You would typically use this in situations similar to the one in the next section, for times you may be sending events for different users in the same page load.
+
+```php
+$event = new \Zumba\Amplitude\Event();
+// Method 1 - add user properties method:
+$event->addUserProperties(
+    [
+        'name' => 'Rambo',
+        // ...
+    ]
+);
+// If you called addUserProperties() a second time, it would add any new properties but not affect ones already set
+
+// Method 2 - just set the userProperties directly:
+$event->userProperties = [
+    'name' => 'Mary',
+    // ...
+];
+// This works just like you would expect: it will reset what is already there.
+// Note that prior to anything being set, $event->userProperties will be null, not an empty array
+```
+You can find more information about how the Event object works below in the [Events]
+### Use-Case: Events for Many Users
+In situations where you will be sending many Amplitude events for different users, you can actually add the user properties on the event object itself as we covered in the previous section.  In fact, everything can be set on the event object itself except for the API Key.
+
+For example:
+
+```php
+// Here, we are not using Singleton as we will only use this connection to send these batch user events, we don't
+// want any user data from the Singleton instance to accidentally bleed into the first user's event
+$amplitude = new \Zumba\Amplitude\Amlitude();
+// Alternatively, if we wanted to re-use the same Amplitude object with the same key elsewhere in the code, could
+// have used:
+// $amplitude = \Zumba\Amplitude\Amplitude::getInstance('NAMED-INSTANCE');
+// That will maintain the same Amplitude instance anywhere that requests that specific name.
+$amplitude->init('APIKEY');
+// $userEvents might be an array your application generates with user info and events that need to be sent
+foreach ($userEvents as $myUserEvent) {
+    $event = $amplitude->event();
+    // Notice below we are setting user ID and user data on the event itself, not inside Amplitude where it would end
+    // up persisting the user ID between logged events...
+
+    // The below assumes an array set like so:
+    /*
+    $myUserEvent = [
+        'id' => 'user-id',
+        'user_details' => [], // key/value array of user info
+        'event_type' => 'EVENT', // event to log
+        'event_properties' => [], // key/value array of event properties to set
+    ];
+     */
+    $event->userId = $myUserEvent['id'];
+    $event->userProperties = $myUserEvent['user_details'];
+    $event->eventType = $myUserEvent['event_type'];
+    $event->set($myUserEvent['event_properties']);
+    // Since we used $amplitude->event() to get event object, it will be the event to be sent when we call this
+    $amplitude->logEvent();
+    // Above we are using logEvent instead of queueEvent since the code is not "spread out", we can ensure that
+    // amplitude is already initialized and all the requirements (eventType and either userId or deviceId) are set
+    // on the event already
+}
+```
+See the next section for more details about what you can do with the `Event` object.
+
 # Events
 
 We have made the library very flexible, in terms of giving you options for how to set up the event to be sent to Amplitude.  Use the method that best suites your own preferences and project needs.
