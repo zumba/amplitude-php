@@ -124,21 +124,6 @@ class Event implements \JsonSerializable
      *
      * It also accepts an array of key => value pairs for the first argument, to pass in an array of properties to set.
      *
-     * All of these are equivelent, and any of these would set the event property "device_brand" to "HTC":
-     *
-     * <code>
-     * $event->set('device_brand', 'HTC');
-     * $event->set('deviceBrand', 'HTC');
-     * // Object magic methods
-     * $event->device_brand = 'HTC';
-     * $event->deviceBrand = 'HTC';
-     * // setting array
-     * $event->set(['device_brand' => 'HTC']);
-     * $event->set(['deviceBrand' => 'HTC']);
-     * </code>
-     *
-     * All of the above are equivelent, use whatever is most appropriate for your project / situation.
-     *
      * Note that only built-in event properties are normalized to match the built-in name.  Custom properties that get
      * set in event_properties are not normalized.  Meaning if you use a camelcase name, name with spaces in it, etc,
      * it will use that name as-is without attempting to normalize.
@@ -186,16 +171,6 @@ class Event implements \JsonSerializable
      * As with the set() method, for built-in event properties, can use camelcase OR underscore and either one will
      * work.  This is not the case for custom event properties however.
      *
-     * For example, any of these calls will get the value of device_brand:
-     *
-     * <code>
-     * $event->get('device_brand');
-     * $event->get('deviceBrand');
-     * // Magic methods work too:
-     * $event->device_brand;
-     * $event->deviceBrand;
-     * </code>
-     *
      * If no value found, returns null.
      *
      * @param string $name
@@ -218,16 +193,6 @@ class Event implements \JsonSerializable
      * As with the set() method, for built-in event properties, can use camelcase OR underscore and either one will
      * work.  This is not the case for custom event properties however.
      *
-     * For example, any of these calls will unset the main built-in property device_brand:
-     *
-     * <code>
-     * $event->unsetProperty('device_brand');
-     * $event->unsetProperty('deviceBrand');
-     * // Magic methods work too:
-     * unset($event->device_brand);
-     * unset($event->deviceBrand);
-     * </code>
-     *
      * @param string $name
      * @return \Zumba\Amplitude\Event
      */
@@ -247,16 +212,6 @@ class Event implements \JsonSerializable
      *
      * As with the set() method, for built-in event properties, can use camelcase OR underscore and either one will
      * work.  This is not the case for custom event properties however.
-     *
-     * For example, any of these calls will check if the built in property for device_brand is set:
-     *
-     * <code>
-     * $event->isPropertySet('device_brand');
-     * $event->isPropertySet('deviceBrand');
-     * // Magic methods work too:
-     * isset($event->device_brand);
-     * isset($event->deviceBrand);
-     * </code>
      *
      * @param string $name
      * @return \Zumba\Amplitude\Event
