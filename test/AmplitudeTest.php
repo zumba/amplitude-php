@@ -154,7 +154,7 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
         $event = $amplitude->event();
         $event->userProperties = $props;
         $result = $amplitude->init('APIKEY', $userId)
-            ->addUserProperties($props2)
+            ->setUserProperties($props2)
             ->logEvent($eventType);
 
         $eventData = $event->toArray();
@@ -291,7 +291,7 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
         $amplitude = new Amplitude();
         $amplitude->setUserId('User')
             ->setDeviceId('device')
-            ->addUserProperties(['user props']);
+            ->setUserProperties(['user props']);
         $this->assertNotEmpty($amplitude->getUserId(), 'Initialization check');
         $this->assertNotEmpty($amplitude->getDeviceId(), 'Initialization check');
         $this->assertNotEmpty($amplitude->getUserProperties(), 'Initialization check');
@@ -321,5 +321,25 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
         $amplitude->logEvent('Another Event')
             ->queueEvent('Another Queued Event');
         $this->assertTrue($amplitude->getOptOut());
+    }
+
+    public function testSetUserProperties()
+    {
+        $userProps = ['dob' => 'tomorrow', 'gender' => 'f'];
+        $amplitude = new Amplitude();
+        $amplitude->setUserProperties($userProps);
+        $this->assertSame($userProps, $amplitude->getUserProperties());
+        $userProps2 = ['dob' => 'yesterday', 'name' => 'Baby'];
+        $expected = [
+            'dob' => 'yesterday',
+            'gender' => 'f',
+            'name' => 'Baby',
+        ];
+        $amplitude->setUserProperties($userProps2);
+        $this->assertSame(
+            $expected,
+            $amplitude->getUserProperties(),
+            'Second call to setUserProperties should set properties, without removing existing'
+        );
     }
 }

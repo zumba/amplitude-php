@@ -78,7 +78,7 @@ class Amplitude
      * <code>
      * // In user initialization section of app...
      * Zumba\Amplitude\Amplitude::getInstance()->init('APIKEY','johnny@example.com')
-     *     ->addUserProperties(['name' => 'Johnny 5'])
+     *     ->setUserProperties(['name' => 'Johnny 5'])
      *     ->logQueuedEvents();
      *
      * // Elsewhere in your app, this could happen before OR after the above initialization...
@@ -257,9 +257,7 @@ class Amplitude
             $event->deviceId = $this->deviceId;
         }
         if (!empty($this->userProperties)) {
-            $props = !empty($event->userProperties) ? $event->userProperties : [];
-            $props = array_merge($props, $this->userProperties);
-            $event->userProperties = $props;
+            $event->setUserProperties($this->userProperties);
             $this->resetUserProperties();
         }
 
@@ -355,18 +353,20 @@ class Amplitude
     /**
      * Set the user properties, will be sent with the next event sent to Amplitude
      *
+     * Any set with this will take precedence over any set on the Event object
+     *
      * If no events are logged, it will not get sent to Amplitude
      *
      * @param array $userProperties
      */
-    public function addUserProperties(array $userProperties)
+    public function setUserProperties(array $userProperties)
     {
         $this->userProperties = array_merge($this->userProperties, $userProperties);
         return $this;
     }
 
     /**
-     * Resets user properties added with addUserProperties() if they have not already been sent in an event to Amplitude
+     * Resets user properties added with setUserProperties() if they have not already been sent in an event to Amplitude
      *
      * @return \Zumba\Amplitude\Amplitude
      */
@@ -391,7 +391,7 @@ class Amplitude
      *
      * This resets the user ID, device ID previously set using setUserId or setDeviceId.
      *
-     * If additional information was previously set using addUserProperties() method, and the event has not already
+     * If additional information was previously set using setUserProperties() method, and the event has not already
      * been sent to Amplitude, it will reset that information as well.
      *
      * Does not reset user information if set manually on an individual event in the queue.
