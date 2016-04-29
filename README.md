@@ -17,7 +17,7 @@ This is a moderately thin PHP API for [Amplitude](https://amplitude.com/), power
 // the user identifier or device identifier, and of course your Amplitude App API key)
 $amplitude = \Zumba\Amplitude\Amplitude::getInstance();
 $amplitude->init('APIKEY', 'johnny@example.com')
-    ->addUserProperties([
+    ->setUserProperties([
         'dob' => '1980-11-04',
         'name' => 'Johnny 5'
     ])
@@ -93,7 +93,7 @@ if ($canLogEvents) {
 There is one main way to set user properties, and this will send the user properties with the next Amplitude event sent to Amplitude:
 ```php
 \Zumba\Amplitude\Amplitude::getInstance()
-    ->addUserProperties(
+    ->setUserProperties(
         [
             'name' => 'Jane',
             'dob' => $dob,
@@ -105,27 +105,28 @@ You would typically call this right before calling `logQueuedEvents()` to make s
 
 Using this method, it only sends the user information with one event, since once a user property is set in Amplitude it persists for all events that match the user ID or event ID.
 
-Also note that if there happens to be no events sent after `addUserProperties()` are sent, those properties will not get sent to Amplitude.
+Also note that if there happens to be no events sent after `setUserProperties()` are sent, those properties will not get sent to Amplitude.
 
 One option, is to use a login event that adds the user info when the user has logged in, and sends it in a login event.  That way you only send user properties for the page load that the user logs in.
 
 Alternatively, just add the user properties with every page load when initializing the Amplitude object.  This is the option used in the examples.
 
 ## Adding User Properties on Event Object
-Another option for setting the user properties, is setting them on the Event object itself.  You can do this by setting `userProperties`, or by using the `addUserProperties()` method on the `Event` object.
+Another option for setting the user properties, is setting them on the Event object itself.  You can do this by setting/changing `userProperties`, or by using the `setUserProperties()` method on the `Event` object.
 
 You would typically use this in situations similar to the one in the next section, for times you may be sending events for different users in the same page load.
 
 ```php
 $event = new \Zumba\Amplitude\Event();
-// Method 1 - add user properties method:
-$event->addUserProperties(
+// Method 1 - set user properties method:
+$event->setUserProperties(
     [
         'name' => 'Rambo',
         // ...
     ]
 );
-// If you called addUserProperties() a second time, it would add any new properties but not affect ones already set
+// If you called setUserProperties() a second time, it would overwrite any properties with the same name but leave
+// others intact
 
 // Method 2 - just set the userProperties directly:
 $event->userProperties = [

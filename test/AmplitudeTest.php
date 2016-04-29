@@ -154,7 +154,7 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
         $event = $amplitude->event();
         $event->userProperties = $props;
         $result = $amplitude->init('APIKEY', $userId)
-            ->addUserProperties($props2)
+            ->setUserProperties($props2)
             ->logEvent($eventType);
 
         $eventData = $event->toArray();
@@ -291,7 +291,7 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
         $amplitude = new Amplitude();
         $amplitude->setUserId('User')
             ->setDeviceId('device')
-            ->addUserProperties(['user props']);
+            ->setUserProperties(['user props']);
         $this->assertNotEmpty($amplitude->getUserId(), 'Initialization check');
         $this->assertNotEmpty($amplitude->getDeviceId(), 'Initialization check');
         $this->assertNotEmpty($amplitude->getUserProperties(), 'Initialization check');
