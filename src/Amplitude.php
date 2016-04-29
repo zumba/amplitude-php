@@ -257,9 +257,7 @@ class Amplitude
             $event->deviceId = $this->deviceId;
         }
         if (!empty($this->userProperties)) {
-            $props = !empty($event->userProperties) ? $event->userProperties : [];
-            $props = array_merge($props, $this->userProperties);
-            $event->userProperties = $props;
+            $event->setUserProperties($this->userProperties);
             $this->resetUserProperties();
         }
 
@@ -354,6 +352,8 @@ class Amplitude
 
     /**
      * Set the user properties, will be sent with the next event sent to Amplitude
+     *
+     * Any set with this will take precedence over any set on the Event object
      *
      * If no events are logged, it will not get sent to Amplitude
      *

@@ -100,6 +100,17 @@ class Event implements \JsonSerializable
         }
     }
 
+    /**
+     * Set the user properties on the event
+     *
+     * @param array $userProperties
+     */
+    public function setUserProperties(array $userProperties)
+    {
+        $props = $this->userProperties ?: [];
+        $this->userProperties = array_merge($props, $userProperties);
+        return $this;
+    }
 
     /**
      * Set a value in the event.
