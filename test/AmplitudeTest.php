@@ -322,4 +322,25 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
             ->queueEvent('Another Queued Event');
         $this->assertTrue($amplitude->getOptOut());
     }
+
+    public function testAddUserProperties()
+    {
+        $userProps = ['dob' => 'tomorrow', 'gender' => 'f'];
+        $amplitude = new Amplitude();
+        $amplitude->addUserProperties($userProps);
+        $this->assertSame($userProps, $amplitude->getUserProperties());
+
+        $userProps2 = ['dob' => 'yesterday', 'name' => 'Baby'];
+        $expected = [
+            'dob' => 'tomorrow',
+            'gender' => 'f',
+            'name' => 'Baby',
+        ];
+        $amplitude->addUserProperties($userProps2);
+        $this->assertSame(
+            $expected,
+            $amplitude->getUserProperties(),
+            'Second call to addUserProperties should only add new properties, not overwrite existing'
+        );
+    }
 }

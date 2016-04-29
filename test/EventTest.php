@@ -201,4 +201,29 @@ class EventTest extends \PHPUnit_Framework_TestCase
         unset($event->userId);
         $this->assertEmpty($event->userId, 'Should unset built-in properties with magic unset');
     }
+
+    public function testAddUserProperties()
+    {
+        $userProps = ['dob' => 'tomorrow', 'gender' => 'f'];
+        $event = new Event();
+        $event->addUserProperties($userProps);
+        $this->assertSame(
+            ['user_properties' => $userProps],
+            $event->toArray(),
+            'Should set user properties in user_properties'
+        );
+
+        $userProps2 = ['dob' => 'yesterday', 'name' => 'Baby'];
+        $expected = [
+            'dob' => 'tomorrow',
+            'gender' => 'f',
+            'name' => 'Baby',
+        ];
+        $event->addUserProperties($userProps2);
+        $this->assertSame(
+            ['user_properties' => $expected],
+            $event->toArray(),
+            'Second call to addUserProperties should only add new properties, not overwrite existing'
+        );
+    }
 }

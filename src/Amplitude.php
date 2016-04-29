@@ -257,9 +257,7 @@ class Amplitude
             $event->deviceId = $this->deviceId;
         }
         if (!empty($this->userProperties)) {
-            $props = !empty($event->userProperties) ? $event->userProperties : [];
-            $props = array_merge($props, $this->userProperties);
-            $event->userProperties = $props;
+            $event->addUserProperties($this->userProperties);
             $this->resetUserProperties();
         }
 
@@ -353,15 +351,21 @@ class Amplitude
     }
 
     /**
-     * Set the user properties, will be sent with the next event sent to Amplitude
+     * Add user properties, will be sent with the next event sent to Amplitude
      *
-     * If no events are logged, it will not get sent to Amplitude
+     * If user properties are added to the event directly, these will be added on top, so the properties set directly
+     * on the Event object would take precedence.
+     *
+     * If this is called multiple times before an event is sent, later calls will only add to the array, it will not
+     * overwrite values already set if no events have been sent yet.
+     *
+     * Note that if no events are logged after this point, it will not get sent to Amplitude
      *
      * @param array $userProperties
      */
     public function addUserProperties(array $userProperties)
     {
-        $this->userProperties = array_merge($this->userProperties, $userProperties);
+        $this->userProperties = $this->userProperties + $userProperties;
         return $this;
     }
 
