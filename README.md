@@ -136,7 +136,7 @@ $event->userProperties = [
 // This works just like you would expect: it will reset what is already there.
 // Note that prior to anything being set, $event->userProperties will be null, not an empty array
 ```
-You can find more information about how the Event object works below in the [Events]
+You can find more information about how the Event object works below in the [Events](#events) section.
 ### Use-Case: Events for Many Users
 In situations where you will be sending many Amplitude events for different users, you can actually add the user properties on the event object itself as we covered in the previous section.  In fact, everything can be set on the event object itself except for the API Key.
 
@@ -181,7 +181,7 @@ See the next section for more details about what you can do with the `Event` obj
 
 # Events
 
-We have made the library very flexible, in terms of giving you options for how to set up the event to be sent to Amplitude.  Use the method that best suites your own preferences and project needs.
+This library is very flexible, in terms of giving you options for how to set up the event to be sent to Amplitude.  Use the method that best suites your own preferences and project needs.
 
 ## Just Send It!
 
@@ -204,7 +204,7 @@ You have the option to use an event object to set up the event, if this is more 
 // Get the next event that will be queued or sent:
 $event = \Zumba\Amplitude\Amplitude::getInstance()->event();
 
-// Set up the even there, by setting properties...
+// Set up the event here, by setting properties...
 $event->eventType = 'EVENT-NAME';
 
 // Queue or send the event - since we got the event using the event method, it will be the one used on the next
@@ -321,7 +321,7 @@ foreach ($eventFactory->getEvents() as $event) {
 For times that you just want to quickly set some properties on the next event that will be queued or sent, but aren't ready to actually send or queue the event yet, you can pass in an array of properties into the `$amplitude->event()` method.
 
 ```php
-// Convinience way to quickly add properties to an event, just pass in array of properties to the event method:
+// Convenience way to quickly add properties to an event, just pass in array of properties to the event method:
 \Zumba\Zumba\Amplitude::getInstance()->event(
     [
         'eventProp' => 'Event Value',
@@ -330,7 +330,7 @@ For times that you just want to quickly set some properties on the next event th
     ]
 );
 
-// The above is equivalent of:
+// The above is equivalent to:
 $event = \Zumba\Zumba\Amplitude::getInstance()->event();
 $event->set(
     [
@@ -346,16 +346,16 @@ $event->set(
 The difference?
 
 * Both:
- * Require the eventType to be set and non-empty.
+ * Require the `eventType` to be set and non-empty.
 * `logEvent()`:
  * Requires API Key to be set, will throw exception if not set yet.
- * Requires either userId or deviceId to be set, will throw exception if not set either on the amplitude instance, or on the event itself.
+ * Requires either `userId` or `deviceId` to be set, will throw exception if not set either on the amplitude instance, or on the event itself.
  * Always sends the event at the time it is called, assuming requirements met.
 * `queueEvent()`:
- * Does NOT require API key to be set first.
- * Does NOT require userId or deviceId to be set first.
- * If either of those are not set, OR if there are still un-sent events in the queue, it will add the event to an internal queue.  This queue does not persist across page loads, if any remain in the queue they are lost if not send during that page load.
- * If those requirements ARE set, and there is nothing in the queue, it sends immediately.  So if you have already initialized Amplitude, set the API key and the userId or deviceId, when you call `queueEvent()` it will behave exactly the same as calling `logEvent()` would.
+ * Does **not** require API key to be set ***first***.
+ * Does **not** require `userId` or `deviceId` to be set ***first***.
+ * If either of those are not set, or if there are still un-sent events in the queue, it will add the event to an internal queue.  This queue does not persist across page loads, if any remain in the queue they are lost if not send during that page load.
+ * If those requirements **are** set, and there is nothing in the queue, it sends immediately.  So if you have already initialized Amplitude, set the API key and the `userId` or `deviceId`, when you call `queueEvent()` it will behave exactly the same as calling `logEvent()` would.
  * If you do use this, immediately after initializing Amplitude (setting the API key and either the `userId` or `deviceId` in amplitude), be sure to call `$amplitude->logQueuedEvents()` to send any events that are on the queue.  If nothing is on the queue, no worries, nothing happens.
 
 Why would you ever use `logEvent()` instead of `queueEvent()`?  The use case for that is when sending events for multiple users, in such a way that you are initializing the data then sending right away.  Using `logEvent()` in that case you would catch right away if something is not initialized right away (it will throw a logic exception), instead of "quietly" starting up a queue that you may never deal with if not expecting there to be one.

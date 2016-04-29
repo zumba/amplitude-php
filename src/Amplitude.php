@@ -72,24 +72,19 @@ class Amplitude
      * a new object directly.
      *
      * Useful if want to possibly send multiple events for the same user in a single page load, or even keep track
-     * of multiple named instances, each could track to it's own api key and/or user.
+     * of multiple named instances, each could track to it's own api key and/or user/device ID.
      *
-     * Example:
-     * <code>
-     * // In user initialization section of app...
-     * Zumba\Amplitude\Amplitude::getInstance()->init('APIKEY','johnny@example.com')
-     *     ->setUserProperties(['name' => 'Johnny 5'])
-     *     ->logQueuedEvents();
+     * Each instance maintains it's own:
+     * - API Key
+     * - User ID
+     * - Device ID
+     * - User Properties
+     * - Event Queue (if events are queued before the amplitude instance is initialized)
+     * - Event object - for the next event that will be sent or queued
+     * - Opt out status
      *
-     * // Elsewhere in your app, this could happen before OR after the above initialization...
-     * // See queueEvent() for more info
-     * Zumba\Amplitude\Amplitude::getInstance()->queueEvent(
-     *     'VEHICLE CREATED EVENT',
-     *     ['wheels' => '2', 'name' => 'bicycle']
-     * );
-     * </code>
-     *
-     * @param string $instanceName Optional, can use to maintain multiple singleton instances of amplitude
+     * @param string $instanceName Optional, can use to maintain multiple singleton instances of amplitude, each with
+     *   it's own API key set
      * @return \Zumba\Amplitude\Amplitude
      */
     public static function getInstance($instanceName = 'default')
@@ -108,7 +103,7 @@ class Amplitude
     public function __construct($apiKey = null)
     {
         if (!empty($apiKey)) {
-            $this->apiKey = $apiKey;
+            $this->apiKey = (string)$apiKey;
         }
     }
 
@@ -123,7 +118,7 @@ class Amplitude
      */
     public function init($apiKey, $userId = null)
     {
-        $this->apiKey = $apiKey;
+        $this->apiKey = (string)$apiKey;
         if ($userId !== null) {
             $this->setUserId($userId);
         }
@@ -165,28 +160,8 @@ class Amplitude
     /**
      * Gets the event that will be used for the next event logged by call to logEvent() or queueEvent()
      *
-     * If this style suites your project, you can do something like this:
-     *
-     * <code>
-     * $event = $amplitude->event();
-     * // Set up event here...
-     * $event->set('event_type', 'EVENT TYPE')
-     *     ->set('custom property', 'Some Value');
-     *
-     * // Calling this will log the event we just set up
-     * $amplitude->logEvent();
-     * </code>
-     *
-     * That would be the equivelent of this:
-     * <code>
-     * $amplitude->logEvent('EVENT TYPE', ['custom property' => 'Some Value']);
-     * </code>
-     *
-     * Note that either use above requires amplitude to be set up first with all the required things set (like api
-     * key and either user ID or device ID).  You can replace logEvent with queueEvent if you may need to run it before
-     * amplitude is fully initialized.
-     *
-     * You can also pass in an event to set as the next event to run.
+     * You can also pass in an event or array of event properties.  If you pass in an event, it will be set as the
+     * event to be used for the next call to queueEvent() or logEvent()
      *
      * @param null|array|\Zumba\Amplitude\Event Can pass in an event to set as the next event to run, or array to set
      *   properties on that event
@@ -210,8 +185,6 @@ class Amplitude
     /**
      * Resets the event currently in the process of being set up (what is returned by event())
      *
-     * This could end up clearing user data set.
-     *
      * @return \Zumba\Amplitude\Amplitude
      */
     public function resetEvent()
@@ -224,10 +197,10 @@ class Amplitude
      * Log an event immediately
      *
      * Requires amplitude is already initialized and user ID or device ID is set.  If need to wait until amplitude
-     * is initialized, use queueEvent method instead.
+     * is initialized, use queueEvent() method instead.
      *
-     * Can either pass in information to be logged, or can set up the event using OOP, see the event() method for more
-     * information
+     * Can either pass in information to be logged, or can set up the Event object before hand, see the event()
+     * method for more information
      *
      * @param string $eventType Required if not set on event object prior to calling this
      * @param array $eventProperties Optional, properties to set on event
@@ -244,22 +217,10 @@ class Amplitude
             throw new \LogicException(static::EXCEPTION_MSG_NO_API_KEY);
         }
         $event = $this->event();
-        if (!empty($eventProperties)) {
-            $event->set($eventProperties);
-        }
-        if (!empty($eventType)) {
-            $event->eventType = $eventType;
-        }
-        if (!empty($this->userId) && empty($event->userId)) {
-            $event->userId = $this->userId;
-        }
-        if (!empty($this->deviceId) && empty($event->deviceId)) {
-            $event->deviceId = $this->deviceId;
-        }
-        if (!empty($this->userProperties)) {
-            $event->setUserProperties($this->userProperties);
-            $this->resetUserProperties();
-        }
+        $event->set($eventProperties);
+        $event->eventType = $eventType ?: $event->eventType;
+        // Set the persistent options on the event
+        $this->setPersistentEventData();
 
         if (empty($event->eventType)) {
             throw new \LogicException(static::EXCEPTION_MSG_NO_EVENT_TYPE);
@@ -277,6 +238,26 @@ class Amplitude
     }
 
     /**
+     * Set the persistent data on the event object
+     *
+     * @return void
+     */
+    protected function setPersistentEventData()
+    {
+        $event = $this->event();
+        if (!empty($this->userId)) {
+            $event->userId = $this->userId;
+        }
+        if (!empty($this->deviceId)) {
+            $event->deviceId = $this->deviceId;
+        }
+        if (!empty($this->userProperties)) {
+            $event->setUserProperties($this->userProperties);
+            $this->resetUserProperties();
+        }
+    }
+
+    /**
      * Log or queue the event, depending on if amplitude instance is already set up or not
      *
      * Note that this is an internal queue, the queue is lost between page loads.
@@ -285,7 +266,9 @@ class Amplitude
      * event to be logged later (during same page load).
      *
      * If the API key, and either user ID or device ID are already set in the amplitude instance, and there is not
-     * already events in the queue that have not been run, this will log the event immediately.
+     * already events in the queue that have not been run, this will log the event immediately.  Note that having
+     * the userId or deviceId set on the event itself does not affect if it queues the event or not, only if set on
+     * the Amplitude instance.
      *
      * Otherwise it will queue the event, and will be run after the amplitude instance is initialized and
      * logQueuedEvents() method is run
@@ -302,9 +285,7 @@ class Amplitude
         }
         $event = $this->event();
         $event->set($eventProperties);
-        if (!empty($eventType)) {
-            $event->eventType = $eventType;
-        }
+        $event->eventType = $eventType ?: $event->eventType;
 
         // Sanity checking
         if (empty($event->eventType)) {
@@ -323,30 +304,28 @@ class Amplitude
     /**
      * Set the user ID for future events logged
      *
-     * Note that setting the user ID directly on an individual Event object will take precedence over one set with this
-     * method.
+     * Any set with this will take precedence over any set on the Event object
      *
      * @param string $userId
      * @return \Zumba\Amplitude\Amplitude
      */
     public function setUserId($userId)
     {
-        $this->userId = $userId;
+        $this->userId = (string)$userId;
         return $this;
     }
 
     /**
      * Set the device ID for future events logged
      *
-     * Note that setting the device ID directly on an individual Event object will take precedence over one set with
-     * this method.
+     * Any set with this will take precedence over any set on the Event object
      *
      * @param string $deviceId
      * @return \Zumba\Amplitude\Amplitude
      */
     public function setDeviceId($deviceId)
     {
-        $this->deviceId = $deviceId;
+        $this->deviceId = (string)$deviceId;
         return $this;
     }
 
