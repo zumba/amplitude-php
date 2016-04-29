@@ -188,7 +188,8 @@ class Amplitude
      *
      * You can also pass in an event to set as the next event to run.
      *
-     * @param null|\Zumba\Amplitude\Event Can pass in an event to set as the next event to run
+     * @param null|array|\Zumba\Amplitude\Event Can pass in an event to set as the next event to run, or array to set
+     *   properties on that event
      * @return \Zumba\Amplitude\Event
      */
     public function event($event = null)
@@ -198,6 +199,10 @@ class Amplitude
         } elseif (empty($this->event)) {
             // Set the values that persist between tracking events
             $this->event = new Event();
+        }
+        if (!empty($event) && is_array($event)) {
+            // Set properties on the event
+            $this->event->set($event);
         }
         return $this->event;
     }
