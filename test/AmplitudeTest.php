@@ -78,6 +78,14 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
         $amplitude->event($event);
         $this->assertSame($event, $amplitude->event(), 'Event passed in should persist until it is used or reset');
         $this->assertNotSame($newEvent, $event, 'Should not keep using old event if pass in a new one');
+
+        $addPropertyEvent = $amplitude->event(['new property' => 'value']);
+        $this->assertSame($addPropertyEvent, $event, 'Should keep using same event, have not set the event yet');
+        $this->assertEquals(
+            'value',
+            $addPropertyEvent->get('new property'),
+            'Should allow passing in event properties to set them on the event'
+        );
     }
 
     public function testLogEvent()
