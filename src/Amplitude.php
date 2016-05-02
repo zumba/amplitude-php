@@ -59,6 +59,20 @@ class Amplitude
     protected $optOut = false;
 
     /**
+     * Flag for if should save the last HTTP response for debugging purposes
+     *
+     * @var boolean True to enable saving the last response
+     */
+    protected $debugResponse = false;
+
+    /**
+     * Last response from logging event
+     *
+     * @var array|null
+     */
+    protected $lastHttpResponse;
+
+    /**
      * Array of Amplitude instances
      *
      * @var \Zumba\Amplitude\Amplitude[]
@@ -452,11 +466,54 @@ class Amplitude
     }
 
     /**
+     * Sets flag for debugging responses
+     *
+     * See getLastHttpResponse() for getting the last response
+     *
+     * @param boolean $debug If true, will keep track of last response from Amplitude for debugging purposes
+     * @return \Zumba\Amplitude\Amplitude
+     */
+    public function setDebugResponse($debug)
+    {
+        $this->debugResponse = (bool)$debug;
+        return $this;
+    }
+
+    /**
+     * Gets current flag value for whether to record the last response from Amplitude when sending events
+     *
+     * @return boolean
+     */
+    public function getDebugResponse()
+    {
+        return $this->debugResponse;
+    }
+
+    /**
+     * For debugging new connections - returns array with details of the last log, or null if no logs sent.
+     *
+     * Returned array will be in the format:
+     * <code>
+     * $lastHttpResponse = [
+     *     'code' => 100, // HTTP Response Code
+     *     'message' => 'success', // Response received
+     *     'curl_error' => '...', // Only set if there was some error when attempting to send the request
+     * ];
+     * </code>
+     *
+     * @return array|null Returns null if debug response is disabled, or if no events sent to Amplitude yet
+     */
+    public function getLastHttpResponse()
+    {
+        return $this->lastHttpResponse;
+    }
+
+    /**
      * Send the event currently set in $this->event to amplitude
      *
      * Requres $this->event and $this->apiKey to be set, otherwise it throws an exception.
      *
-     * @return integer|boolean HTTP Status code or boolean false if problem making connection
+     * @return void
      * @throws \InternalErrorException If event or api key not set
      */
     protected function sendEvent()
@@ -473,10 +530,18 @@ class Amplitude
             return false;
         }
         curl_setopt($ch, \CURLOPT_POSTFIELDS, $postFields);
-        curl_exec($ch);
-
-        $status = curl_getinfo($ch, \CURLINFO_HTTP_CODE);
+        // Always return instead of outputting response!
+        curl_setopt($ch, \CURLOPT_RETURNTRANSFER, true);
+        $response = curl_exec($ch);
+        if ($this->debugResponse) {
+            $this->lastHttpResponse = [
+                'code' => curl_getinfo($ch, \CURLINFO_HTTP_CODE),
+                'message' => $response,
+            ];
+            if ($response === false) {
+                $this->lastHttpResponse['curl_error'] = curl_error($ch);
+            }
+        }
         curl_close($ch);
-        return (int)$status;
     }
 }

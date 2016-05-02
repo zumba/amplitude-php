@@ -40,6 +40,57 @@ $amplitude->init('APIKEY', 'johnny@example.com')
 // This is a simple example to get you started, see the rest of the readme for more examples
 ```
 
+## Getting Started & Troubleshooting
+
+When you are initially getting your application set up, if you do not see your event show up in Amplitude, you may need to do a little troubleshooting.  Normally your indication that "it worked" is when you see your event show up in your Amplitude app for the first time.
+
+If you never see that first event show up, you can see what Amplitude's response is when the event is logged.  This may help point to what the problem is (such as an invalid API key or similar).
+
+You can use `$amplitude->setDebugResponse(true)` before logging an event, then use `$amplitude->getLastHttpResponse()` method after logging an event, to get the response from Amplitude along with any CURL errors if there are any.  Normally you would not do this in a production environment, only for testing testing/troubleshooting, or for getting event tracking in your application working for the first time.
+
+Below is a stand alone troubleshooting script you can use to help you get the initial connection to Amplitude working.
+
+```php
+<?php
+// Stand-alone Amplitude troubleshooting script - just change APIKEY in next line
+$apikey = 'APIKEY';
+
+// Composer Autoloader - If new to composer, see https://getcomposer.org
+require __DIR__ . '/vendor/autoload.php';
+
+// Make sure if there is some error, we will see it
+ini_set('display_errors', true);
+error_reporting(E_ALL);
+
+// Test logging an event
+echo "<h1>Testing Amplitude Log Event Response</h1>";
+$amplitude = new \Zumba\Amplitude\Amplitude();
+
+// Initialize Amplitude with the API key and a dummy test user ID
+$amplitude->init($apikey, 'TEST-USER-ID');
+
+// Only use when testing / troubleshooting, turning this on will make it save the last response from Amplitude,
+// along with a curl_error if there is one:
+$amplitude->setDebugResponse(true);
+
+// Log a test event
+$amplitude->logEvent('TEST EVENT');
+
+// Display results
+echo "Response from Amplitude:<br>";
+var_dump($amplitude->getLastHttpResponse());
+
+```
+
+**Troubleshooting Tips:**
+
+* The Amplitude library will throw a `LogicException` if you try to log an event without something being set up first (for instance if you neglect to set the API key, or there is no event type set).  Make sure your server's error logging is set up to display (or otherwise log) any exceptions that might be thrown.
+* Make sure PHP error logging is enabled, and check your error logs for any errors that may point to the problem.
+* Using `setDebugResponse(true)` and `getLastHttpResponse()` similar to the above stand-alone troubleshooting script:
+ * If the response is `null`:  It did not attempt to send an event after the point `setDebugResponse(true)` was called, or some PHP error prevented it from doing so.
+ * If you see `curl_error` then something went wrong when it tried to send the request, the error message should help point to the problem.
+ * If response code is `200` and message is `success` - Amplitude got the request and the event should have been logged.  If you are not seeing it in Amplitude, check again after a few minutes, sometimes Amplitude can lag a little behind.
+
 # Logging Anonymous Users
 
 Since this is a PHP SDK, there are a lot of options for tracking Anonymous users.  Since this could be run in CLI mode or as a cron job, this SDK does not handle sessions for you.
