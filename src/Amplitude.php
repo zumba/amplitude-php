@@ -1,8 +1,12 @@
 <?php
 namespace Zumba\Amplitude;
 
+use Psr\Log;
+
 class Amplitude
 {
+    use Log\LoggerAwareTrait;
+
     const AMPLITUDE_API_URL = 'https://api.amplitude.com/httpapi';
 
     const EXCEPTION_MSG_NO_API_KEY = 'API Key is required to log an event';
@@ -59,6 +63,20 @@ class Amplitude
     protected $optOut = false;
 
     /**
+     * Flag for if should save the last HTTP response for debugging purposes
+     *
+     * @var boolean True to enable saving the last response
+     */
+    protected $debugResponse = false;
+
+    /**
+     * Last response from logging event
+     *
+     * @var array|null
+     */
+    protected $lastHttpResponse;
+
+    /**
      * Array of Amplitude instances
      *
      * @var \Zumba\Amplitude\Amplitude[]
@@ -81,6 +99,7 @@ class Amplitude
      * - User Properties
      * - Event Queue (if events are queued before the amplitude instance is initialized)
      * - Event object - for the next event that will be sent or queued
+     * - Logger
      * - Opt out status
      *
      * @param string $instanceName Optional, can use to maintain multiple singleton instances of amplitude, each with
@@ -99,12 +118,15 @@ class Amplitude
      * Constructor, optionally sets the api key
      *
      * @param string $apiKey
+     * @param \Psr\Log $logger
      */
     public function __construct($apiKey = null)
     {
         if (!empty($apiKey)) {
             $this->apiKey = (string)$apiKey;
         }
+        // Initialize logger to be null logger
+        $this->setLogger(new Log\NullLogger());
     }
 
     /**
@@ -456,7 +478,7 @@ class Amplitude
      *
      * Requres $this->event and $this->apiKey to be set, otherwise it throws an exception.
      *
-     * @return integer|boolean HTTP Status code or boolean false if problem making connection
+     * @return void
      * @throws \InternalErrorException If event or api key not set
      */
     protected function sendEvent()
@@ -464,19 +486,36 @@ class Amplitude
         if (empty($this->event) || empty($this->apiKey)) {
             throw new \InternalErrorException('Event or api key not set, cannot send event');
         }
+        $ch = curl_init(static::AMPLITUDE_API_URL);
+        if (!$ch) {
+            // Could be a number of PHP environment problems, log a critical error
+            $this->logger->critical(
+                'Call to curl_init(' . static::AMPLITUDE_API_URL . ') failed, unable to send Amplitude event'
+            );
+            return;
+        }
         $postFields = [
             'api_key' => $this->apiKey,
             'event' => json_encode($this->event),
         ];
-        $ch = curl_init(static::AMPLITUDE_API_URL);
-        if (!$ch) {
-            return false;
-        }
         curl_setopt($ch, \CURLOPT_POSTFIELDS, $postFields);
-        curl_exec($ch);
-
-        $status = curl_getinfo($ch, \CURLINFO_HTTP_CODE);
+        // Always return instead of outputting response!
+        curl_setopt($ch, \CURLOPT_RETURNTRANSFER, true);
+        $response = curl_exec($ch);
+        $curlErrno = curl_errno($ch);
+        if ($curlErrno) {
+            $this->logger->critical(
+                'Curl error: ' . curl_error($ch),
+                compact('curlErrno', 'response', 'postFields')
+            );
+        } else {
+            $httpCode = curl_getinfo($ch, \CURLINFO_HTTP_CODE);
+            $this->logger->log(
+                $httpCode === 200 ? Log\LogLevel::INFO : Log\LogLevel::ERROR,
+                'Amplitude HTTP API response: ' . $response,
+                compact('httpCode', 'response', 'postFields')
+            );
+        }
         curl_close($ch);
-        return (int)$status;
     }
 }
