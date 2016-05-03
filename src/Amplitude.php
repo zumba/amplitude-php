@@ -1,8 +1,12 @@
 <?php
 namespace Zumba\Amplitude;
 
+use Psr\Log;
+
 class Amplitude
 {
+    use Log\LoggerAwareTrait;
+
     const AMPLITUDE_API_URL = 'https://api.amplitude.com/httpapi';
 
     const EXCEPTION_MSG_NO_API_KEY = 'API Key is required to log an event';
@@ -95,6 +99,7 @@ class Amplitude
      * - User Properties
      * - Event Queue (if events are queued before the amplitude instance is initialized)
      * - Event object - for the next event that will be sent or queued
+     * - Logger
      * - Opt out status
      *
      * @param string $instanceName Optional, can use to maintain multiple singleton instances of amplitude, each with
@@ -113,12 +118,15 @@ class Amplitude
      * Constructor, optionally sets the api key
      *
      * @param string $apiKey
+     * @param \Psr\Log $logger
      */
     public function __construct($apiKey = null)
     {
         if (!empty($apiKey)) {
             $this->apiKey = (string)$apiKey;
         }
+        // Initialize logger to be null logger
+        $this->setLogger(new Log\NullLogger());
     }
 
     /**
@@ -466,49 +474,6 @@ class Amplitude
     }
 
     /**
-     * Sets flag for debugging responses
-     *
-     * See getLastHttpResponse() for getting the last response
-     *
-     * @param boolean $debug If true, will keep track of last response from Amplitude for debugging purposes
-     * @return \Zumba\Amplitude\Amplitude
-     */
-    public function setDebugResponse($debug)
-    {
-        $this->debugResponse = (bool)$debug;
-        return $this;
-    }
-
-    /**
-     * Gets current flag value for whether to record the last response from Amplitude when sending events
-     *
-     * @return boolean
-     */
-    public function getDebugResponse()
-    {
-        return $this->debugResponse;
-    }
-
-    /**
-     * For debugging new connections - returns array with details of the last log, or null if no logs sent.
-     *
-     * Returned array will be in the format:
-     * <code>
-     * $lastHttpResponse = [
-     *     'code' => 100, // HTTP Response Code
-     *     'message' => 'success', // Response received
-     *     'curl_error' => '...', // Only set if there was some error when attempting to send the request
-     * ];
-     * </code>
-     *
-     * @return array|null Returns null if debug response is disabled, or if no events sent to Amplitude yet
-     */
-    public function getLastHttpResponse()
-    {
-        return $this->lastHttpResponse;
-    }
-
-    /**
      * Send the event currently set in $this->event to amplitude
      *
      * Requres $this->event and $this->apiKey to be set, otherwise it throws an exception.
@@ -521,26 +486,35 @@ class Amplitude
         if (empty($this->event) || empty($this->apiKey)) {
             throw new \InternalErrorException('Event or api key not set, cannot send event');
         }
+        $ch = curl_init(static::AMPLITUDE_API_URL);
+        if (!$ch) {
+            // Could be a number of PHP environment problems, log a critical error
+            $this->logger->critical(
+                'Call to curl_init(' . static::AMPLITUDE_API_URL . ') failed, unable to send Amplitude event'
+            );
+            return;
+        }
         $postFields = [
             'api_key' => $this->apiKey,
             'event' => json_encode($this->event),
         ];
-        $ch = curl_init(static::AMPLITUDE_API_URL);
-        if (!$ch) {
-            return false;
-        }
         curl_setopt($ch, \CURLOPT_POSTFIELDS, $postFields);
         // Always return instead of outputting response!
         curl_setopt($ch, \CURLOPT_RETURNTRANSFER, true);
         $response = curl_exec($ch);
-        if ($this->debugResponse) {
-            $this->lastHttpResponse = [
-                'code' => curl_getinfo($ch, \CURLINFO_HTTP_CODE),
-                'message' => $response,
-            ];
-            if ($response === false) {
-                $this->lastHttpResponse['curl_error'] = curl_error($ch);
-            }
+        $curlErrno = curl_errno($ch);
+        if ($curlErrno) {
+            $this->logger->critical(
+                'Curl error: ' . curl_error($ch),
+                compact('curlErrno', 'response', 'postFields')
+            );
+        } else {
+            $httpCode = curl_getinfo($ch, \CURLINFO_HTTP_CODE);
+            $this->logger->log(
+                $httpCode === 200 ? Log\LogLevel::INFO : Log\LogLevel::ERROR,
+                'Amplitude HTTP API response: ' . $response,
+                compact('httpCode', 'response', 'postFields')
+            );
         }
         curl_close($ch);
     }

@@ -342,26 +342,4 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
             'Second call to setUserProperties should set properties, without removing existing'
         );
     }
-
-    public function testGetLastHttpResponse()
-    {
-        $amplitude = new Amplitude();
-        $this->assertFalse($amplitude->getDebugResponse(), 'Initialization check - should have debug response off');
-        $amplitude->init('APIKEY', 'USERID');
-        $amplitude->logEvent('EVENT');
-        $this->assertNull(
-            $amplitude->getLastHttpResponse(),
-            'Should not keep track of last response if not enabled yet'
-        );
-        $amplitude->setDebugResponse(true)
-            ->logEvent('EVENT');
-
-        $lastResponse = $amplitude->getLastHttpResponse();
-        $this->assertArrayNotHasKey('curl_error', $lastResponse, 'Should not have had any CURL errors');
-        $this->assertSame(
-            400,
-            $lastResponse['code'],
-            'Should have been HTTP code 400 with invalid API key set for test'
-        );
-    }
 }

@@ -44,11 +44,13 @@ $amplitude->init('APIKEY', 'johnny@example.com')
 
 When you are initially getting your application set up, if you do not see your event show up in Amplitude, you may need to do a little troubleshooting.  Normally your indication that "it worked" is when you see your event show up in your Amplitude app for the first time.
 
-If you never see that first event show up, you can see what Amplitude's response is when the event is logged.  This may help point to what the problem is (such as an invalid API key or similar).
+If you never see that first event show up, you can see what Amplitude's response is when the event is logged.  This may help find and fix the problem (such as an invalid API key, PHP environment errors, connection problems, etc.)
 
-You can use `$amplitude->setDebugResponse(true)` before logging an event, then use `$amplitude->getLastHttpResponse()` method after logging an event, to get the response from Amplitude along with any CURL errors if there are any.  Normally you would not do this in a production environment, only for testing testing/troubleshooting, or for getting event tracking in your application working for the first time.
+Amplitude uses `Psr\Logger` for logging the communication with the Amplitude HTTP API.  You can take advantage of this by setting a logger (using `$amlitude->setLogger()`) to help catch any problems.
 
-Below is a stand alone troubleshooting script you can use to help you get the initial connection to Amplitude working.
+### Stand-alone Troubleshooting Script
+
+Below is a stand-alone script, meant to be copied into a PHP file at the root of your application's document root.  Just change the `APIKEY` and if needed, adjust the line that requires the `autoload.php` file for composer.  Then visit the script's URL from a browser to see any messages logged.
 
 ```php
 <?php
@@ -62,34 +64,64 @@ require __DIR__ . '/vendor/autoload.php';
 ini_set('display_errors', true);
 error_reporting(E_ALL);
 
+// Quick logger to display log messages - NOT for production use, this displays log message to the browser
+class ChattyLogger extends \Psr\Log\AbstractLogger
+{
+    public function log($level, $message, array $context = [])
+    {
+        echo "<p><strong>".ucfirst($level).":</strong> $message<br>";
+        if (!empty($context)) {
+            echo '<strong>Context:</strong><br><span class="code">'.print_r($context,true).'</span>';
+        }
+    }
+}
+
+$chatty = new ChattyLogger();
 // Test logging an event
-echo "<h1>Testing Amplitude Log Event Response</h1>";
+?>
+<style>
+.code {
+    display: inline-block;
+    border: 1px solid #a7a7a7;
+    padding: 15px;
+    margin: 0 5px;
+    background-color: #eaeaea;
+    white-space: pre;
+}
+p {
+    padding-bottom: 5px;
+    border-bottom: thin dashed gray;
+}
+</style>
+<h1>Testing Amplitude Log Event Response</h1>
+<h2>API Key: '<?= $apikey ?>'</h2>
+<?php
 $amplitude = new \Zumba\Amplitude\Amplitude();
+
+// Add the chatty logger so we can see log messages
+$amplitude->setLogger($chatty);
 
 // Initialize Amplitude with the API key and a dummy test user ID
 $amplitude->init($apikey, 'TEST-USER-ID');
 
-// Only use when testing / troubleshooting, turning this on will make it save the last response from Amplitude,
-// along with a curl_error if there is one:
-$amplitude->setDebugResponse(true);
+$chatty->info('Calling $amplitude->logEvent(\'TEST EVENT\')...');
 
 // Log a test event
 $amplitude->logEvent('TEST EVENT');
 
-// Display results
-echo "Response from Amplitude:<br>";
-var_dump($amplitude->getLastHttpResponse());
-
+$chatty->info('Done logging event');
 ```
 
-**Troubleshooting Tips:**
+### Troubleshooting Tips
 
-* The Amplitude library will throw a `LogicException` if you try to log an event without something being set up first (for instance if you neglect to set the API key, or there is no event type set).  Make sure your server's error logging is set up to display (or otherwise log) any exceptions that might be thrown.
-* Make sure PHP error logging is enabled, and check your error logs for any errors that may point to the problem.
-* Using `setDebugResponse(true)` and `getLastHttpResponse()` similar to the above stand-alone troubleshooting script:
- * If the response is `null`:  It did not attempt to send an event after the point `setDebugResponse(true)` was called, or some PHP error prevented it from doing so.
- * If you see `curl_error` then something went wrong when it tried to send the request, the error message should help point to the problem.
- * If response code is `200` and message is `success` - Amplitude got the request and the event should have been logged.  If you are not seeing it in Amplitude, check again after a few minutes, sometimes Amplitude can lag a little behind.
+* The Amplitude library will throw a `LogicException` for any problems caused by errors in the code, for instance if you try to log an event without setting the API key first, or try to log an event without specifying the event type.  Make sure your server's error logging is set up to display (or otherwise log) any exceptions that might be thrown so that you can see if there is a coding error causing a problem.
+* Make sure PHP error logging is enabled (or display errors is enabled), so you can see any PHP errors that may point to the problem.
+* Use the `setLogger(...)` method in amplitude to use your app's logging or your own custom logger like the standalone test script above.  As long as it implements the `Psr\Log\LoggerInterface`.
+  * If no logs are generated:  It did not attempt to send an event after the point your app's logger was set, or the event was logged using a different instance that does not have a logger set.
+  * If you see `Curl error:` logged: then something went wrong when it tried to send the request, the error message and context should help point to the problem.
+  * If there are no curl errors, it will log a message starting with `Amplitude HTTP API response:`:
+    * `success` with `httpCode = 200` : Amplitude got the request and the event should have been logged.  If you are not seeing it in Amplitude, check again after a few minutes, sometimes Amplitude can lag a little behind.
+    * Anything Else: The event was not logged successfully, refer to the message and context to help troubleshoot the problem.
 
 # Logging Anonymous Users
 
