@@ -73,6 +73,7 @@ class ChattyLogger extends \Psr\Log\AbstractLogger
         if (!empty($context)) {
             echo '<strong>Context:</strong><br><span class="code">'.print_r($context,true).'</span>';
         }
+        echo '</p>';
     }
 }
 
@@ -332,7 +333,7 @@ unset($event->productId);
 
 ### Sending or Queuing the Event
 
-Once you have set all the event properties, you can then send or queue the event, just by calling `$amplitude->queueEvent()` or `$amplitude->sendEvent()`.
+Once you have set all the event properties, you can then send or queue the event, just by calling `$amplitude->queueEvent()` or `$amplitude->logEvent()`.
 
 Note: If you just created a new `Event` object, before calling `queueEvent()` or `logEvent()`, you must pass that event into amplitude like this:
 ```php
