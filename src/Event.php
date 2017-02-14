@@ -31,6 +31,7 @@ namespace Zumba\Amplitude;
  * @property int $quantity
  * @property float $revenue
  * @property string $productId
+ * @property int $sessionId
  * @property string $revenueType
  * @property float $locationLat
  * @property float $locationLng
@@ -78,6 +79,7 @@ class Event implements \JsonSerializable
         'language' => 'string',
         'price' => 'float',
         'quantity' => 'int',
+        'session_id' => 'int',
         'revenue' => 'float',
         'productId' => 'string',
         'revenueType' => 'string',
