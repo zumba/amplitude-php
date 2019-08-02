@@ -2,13 +2,14 @@
 
 namespace Zumba\Amplitude\Test;
 
-use \Zumba\Amplitude\Amplitude;
-use \Zumba\Amplitude\Event;
+use PHPUnit\Framework\TestCase;
+use Zumba\Amplitude\Amplitude;
+use Zumba\Amplitude\Event;
 
 /**
  * @group amplitude
  */
-class AmplitudeTest extends \PHPUnit_Framework_TestCase
+class AmplitudeTest extends TestCase
 {
     public function testGetInstance()
     {
@@ -37,43 +38,54 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
 
     public function testLogQueuedEvents()
     {
-        $amplitude = $this->getMock('\Zumba\Amplitude\Amplitude', ['logEvent']);
+        $amplitude = $this->getMockBuilder(Amplitude::class)
+            ->onlyMethods(['logEvent'])
+            ->getMock()
+        ;
 
         $amplitude->expects($this->exactly(3))
-            ->method('logEvent');
+            ->method('logEvent')
+        ;
 
         $amplitude->queueEvent('Event 1')
             ->queueEvent('Event 2', ['customProp' => 'value'])
-            ->queueEvent('Event 3');
+            ->queueEvent('Event 3')
+        ;
 
         $this->assertTrue($amplitude->hasQueuedEvents(), 'Initialization check, should have queued events');
 
         $amplitude->init('APIKEY', 'USER-ID')
-            ->logQueuedEvents();
+            ->logQueuedEvents()
+        ;
 
         $this->assertFalse($amplitude->hasQueuedEvents(), 'logQueuedEvents should reset the queue afterwards');
     }
 
     public function testLogQueuedEventsEmptyQueue()
     {
-        $amplitude = $this->getMock('\Zumba\Amplitude\Amplitude', ['logEvent']);
+        $amplitude = $this->getMockBuilder(Amplitude::class)
+            ->onlyMethods(['logEvent'])
+            ->getMock()
+        ;
 
         $amplitude->expects($this->never())
-            ->method('logEvent');
+            ->method('logEvent')
+        ;
 
         $this->assertFalse($amplitude->hasQueuedEvents(), 'Initialization check, should not have queued events');
 
         $result = $amplitude->init('APIKEY', 'USER-ID')
-            ->logQueuedEvents();
+            ->logQueuedEvents()
+        ;
 
         $this->assertSame($amplitude, $result, 'Should return itself');
     }
 
     public function testEvent()
     {
-        $event = new Event();
+        $event     = new Event();
         $amplitude = new Amplitude();
-        $newEvent = $amplitude->event();
+        $newEvent  = $amplitude->event();
         $this->assertNotSame($newEvent, $event, 'Initialization check');
         $amplitude->event($event);
         $this->assertSame($event, $amplitude->event(), 'Event passed in should persist until it is used or reset');
@@ -90,17 +102,21 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
 
     public function testLogEvent()
     {
-        $props = ['event property' => 'value'];
-        $userId = 'USERID';
-        $deviceId = 'DEVICEID';
-        $eventType = 'Event Type';
+        $props           = ['event property' => 'value'];
+        $userId          = 'USERID';
+        $deviceId        = 'DEVICEID';
+        $eventType       = 'Event Type';
         $secondEventType = 'Second Event';
 
-        $amplitude = $this->getMock('\Zumba\Amplitude\Amplitude', ['sendEvent']);
-        $event = $amplitude->event();
-        $result = $amplitude->init('APIKEY', $userId)
+        $amplitude = $this->getMockBuilder(Amplitude::class)
+            ->onlyMethods(['sendEvent'])
+            ->getMock()
+        ;
+        $event     = $amplitude->event();
+        $result    = $amplitude->init('APIKEY', $userId)
             ->setDeviceId($deviceId)
-            ->logEvent($eventType, $props);
+            ->logEvent($eventType, $props)
+        ;
 
         $eventData = $event->toArray();
 
@@ -145,17 +161,21 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
 
     public function testLogEventUserPropertiesMerged()
     {
-        $props = ['event property' => 'value'];
-        $props2 = ['second prop' => 'second val'];
-        $userId = 'USERID';
+        $props     = ['event property' => 'value'];
+        $props2    = ['second prop' => 'second val'];
+        $userId    = 'USERID';
         $eventType = 'Event Type';
 
-        $amplitude = $this->getMock('\Zumba\Amplitude\Amplitude', ['sendEvent']);
-        $event = $amplitude->event();
+        $amplitude = $this->getMockBuilder(Amplitude::class)
+            ->onlyMethods(['sendEvent'])
+            ->getMock()
+        ;
+        $event                 = $amplitude->event();
         $event->userProperties = $props;
-        $result = $amplitude->init('APIKEY', $userId)
+        $result                = $amplitude->init('APIKEY', $userId)
             ->setUserProperties($props2)
-            ->logEvent($eventType);
+            ->logEvent($eventType)
+        ;
 
         $eventData = $event->toArray();
 
@@ -168,37 +188,49 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
 
     public function testLogEventNoApiKey()
     {
-        $amplitude = $this->getMock('\Zumba\Amplitude\Amplitude', ['sendEvent']);
+        $amplitude = $this->getMockBuilder(Amplitude::class)
+            ->onlyMethods(['sendEvent'])
+            ->getMock()
+        ;
 
         $amplitude->expects($this->never())
-            ->method('sendEvent');
+            ->method('sendEvent')
+        ;
 
-        $this->setExpectedException('\LogicException', Amplitude::EXCEPTION_MSG_NO_API_KEY);
+        $this->expectException(\LogicException::class, Amplitude::EXCEPTION_MSG_NO_API_KEY);
         $amplitude->logEvent();
     }
 
     public function testLogEventNoEventType()
     {
-        $amplitude = $this->getMock('\Zumba\Amplitude\Amplitude', ['sendEvent']);
+        $amplitude = $this->getMockBuilder(Amplitude::class)
+            ->onlyMethods(['sendEvent'])
+            ->getMock()
+        ;
 
         $amplitude->expects($this->never())
-            ->method('sendEvent');
+            ->method('sendEvent')
+        ;
 
         $amplitude->init('APIKEY', 'USER');
-        $this->setExpectedException('\LogicException', Amplitude::EXCEPTION_MSG_NO_EVENT_TYPE);
+        $this->expectException(\LogicException::class, Amplitude::EXCEPTION_MSG_NO_EVENT_TYPE);
         $amplitude->logEvent();
     }
 
     public function testLogEventEventInitializedEarly()
     {
-        $amplitude = $this->getMock('\Zumba\Amplitude\Amplitude', ['sendEvent']);
+        $amplitude = $this->getMockBuilder(Amplitude::class)
+            ->onlyMethods(['sendEvent'])
+            ->getMock()
+        ;
 
         $amplitude->expects($this->once())
-            ->method('sendEvent');
+            ->method('sendEvent')
+        ;
 
-        $event = $amplitude->event();
+        $event            = $amplitude->event();
         $event->eventType = 'Event Type';
-        $event->userId = 'USER';
+        $event->userId    = 'USER';
 
         $amplitude->init('APIKEY');
         $amplitude->logEvent();
@@ -208,21 +240,30 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
 
     public function testLogEventNoUserNoDevice()
     {
-        $amplitude = $this->getMock('\Zumba\Amplitude\Amplitude', ['sendEvent']);
+        $amplitude = $this->getMockBuilder(Amplitude::class)
+            ->onlyMethods(['sendEvent'])
+            ->getMock()
+        ;
 
         $amplitude->expects($this->never())
-            ->method('sendEvent');
+            ->method('sendEvent')
+        ;
 
         $amplitude->init('APIKEY');
-        $this->setExpectedException('\LogicException', Amplitude::EXCEPTION_MSG_NO_USER_OR_DEVICE);
+        $this->expectException(\LogicException::class, Amplitude::EXCEPTION_MSG_NO_USER_OR_DEVICE);
         $amplitude->logEvent('Event');
     }
 
     public function testQueueEvent()
     {
-        $amplitude = $this->getMock('\Zumba\Amplitude\Amplitude', ['logEvent']);
+        $amplitude = $this->getMockBuilder(Amplitude::class)
+            ->onlyMethods(['logEvent'])
+            ->getMock()
+        ;
+
         $amplitude->expects($this->never())
-            ->method('logEvent');
+            ->method('logEvent')
+        ;
 
         $event = $amplitude->event();
         $amplitude->setUserId('USER');
@@ -246,13 +287,18 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
 
     public function testQueueEventAlreadyInitRunImmediately()
     {
-        $amplitude = $this->getMock('\Zumba\Amplitude\Amplitude', ['logEvent']);
+        $amplitude = $this->getMockBuilder(Amplitude::class)
+            ->onlyMethods(['logEvent'])
+            ->getMock()
+        ;
         $amplitude->expects($this->once())
-            ->method('logEvent');
+            ->method('logEvent')
+        ;
 
         $this->assertFalse($amplitude->hasQueuedEvents(), 'Initialization check, should not have queue starting out');
         $amplitude->init('APIKEY', 'USER')
-            ->queueEvent('Event');
+            ->queueEvent('Event')
+        ;
         $this->assertFalse(
             $amplitude->hasQueuedEvents(),
             'Should have sent event right away since amplitude was already initialized'
@@ -261,13 +307,17 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
 
     public function testQueueEventInitEarly()
     {
-        $amplitude = $this->getMock('\Zumba\Amplitude\Amplitude', ['logEvent']);
+        $amplitude = $this->getMockBuilder(Amplitude::class)
+            ->onlyMethods(['logEvent'])
+            ->getMock()
+        ;
         $amplitude->expects($this->never())
-            ->method('logEvent');
+            ->method('logEvent')
+        ;
 
-        $event = $amplitude->event();
+        $event            = $amplitude->event();
         $event->eventType = 'Event';
-        $result = $amplitude->queueEvent();
+        $result           = $amplitude->queueEvent();
         $this->assertTrue(
             $amplitude->hasQueuedEvents(),
             'Should have queued the event without throwing exception since event type set prior to being queued'
@@ -278,11 +328,15 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
 
     public function testQueueEventNoEventType()
     {
-        $amplitude = $this->getMock('\Zumba\Amplitude\Amplitude', ['logEvent']);
+        $amplitude = $this->getMockBuilder(Amplitude::class)
+            ->onlyMethods(['logEvent'])
+            ->getMock()
+        ;
         $amplitude->expects($this->never())
-            ->method('logEvent');
+            ->method('logEvent')
+        ;
 
-        $this->setExpectedException('\LogicException', Amplitude::EXCEPTION_MSG_NO_EVENT_TYPE);
+        $this->expectException(\LogicException::class, Amplitude::EXCEPTION_MSG_NO_EVENT_TYPE);
         $amplitude->queueEvent();
     }
 
@@ -291,7 +345,8 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
         $amplitude = new Amplitude();
         $amplitude->setUserId('User')
             ->setDeviceId('device')
-            ->setUserProperties(['user props']);
+            ->setUserProperties(['user props'])
+        ;
         $this->assertNotEmpty($amplitude->getUserId(), 'Initialization check');
         $this->assertNotEmpty($amplitude->getDeviceId(), 'Initialization check');
         $this->assertNotEmpty($amplitude->getUserProperties(), 'Initialization check');
@@ -305,9 +360,14 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
 
     public function testOptOut()
     {
-        $amplitude = $this->getMock('\Zumba\Amplitude\Amplitude', ['sendEvent']);
+        $amplitude = $this->getMockBuilder(Amplitude::class)
+            ->onlyMethods(['sendEvent'])
+            ->getMock()
+        ;
+
         $amplitude->expects($this->never())
-            ->method('sendEvent');
+            ->method('sendEvent')
+        ;
         // Should not end up attempting to send any events no matter how they are logged, either through queue or
         // directly
         $amplitude->setOptOut(true);
@@ -316,24 +376,30 @@ class AmplitudeTest extends \PHPUnit_Framework_TestCase
 
         $amplitude->init('API', 'USER')
             ->setOptOut(true)
-            ->logQueuedEvents();
+            ->logQueuedEvents()
+        ;
 
         $amplitude->logEvent('Another Event')
-            ->queueEvent('Another Queued Event');
+            ->queueEvent('Another Queued Event')
+        ;
         $this->assertTrue($amplitude->getOptOut());
     }
 
     public function testSetUserProperties()
     {
-        $userProps = ['dob' => 'tomorrow', 'gender' => 'f'];
+        $userProps = ['dob'    => 'tomorrow',
+                      'gender' => 'f',
+        ];
         $amplitude = new Amplitude();
         $amplitude->setUserProperties($userProps);
         $this->assertSame($userProps, $amplitude->getUserProperties());
-        $userProps2 = ['dob' => 'yesterday', 'name' => 'Baby'];
-        $expected = [
-            'dob' => 'yesterday',
+        $userProps2 = ['dob'  => 'yesterday',
+                       'name' => 'Baby',
+        ];
+        $expected   = [
+            'dob'    => 'yesterday',
             'gender' => 'f',
-            'name' => 'Baby',
+            'name'   => 'Baby',
         ];
         $amplitude->setUserProperties($userProps2);
         $this->assertSame(

@@ -16,11 +16,11 @@
         }
     ],
     "require": {
-        "php": ">=5.4",
+        "php": ">=7.2",
         "psr/log": "^1.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "4.8.*",
+        "phpunit/phpunit": "8.3.*",
         "squizlabs/php_codesniffer": "2.6.*"
     },
     "autoload": {
