@@ -7,7 +7,7 @@ class Amplitude
 {
     use Log\LoggerAwareTrait;
 
-    const AMPLITUDE_API_URL = 'https://api.amplitude.com/httpapi';
+    const AMPLITUDE_API_URL = 'https://api2.amplitude.com/httpapi';
 
     const EXCEPTION_MSG_NO_API_KEY = 'API Key is required to log an event';
     const EXCEPTION_MSG_NO_EVENT_TYPE = 'Event Type is required to log or queue an event';
