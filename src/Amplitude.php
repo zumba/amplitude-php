@@ -180,6 +180,18 @@ class Amplitude
         return $this;
     }
 
+    public function setEvent(Event $event = null)
+    {
+        $this->event = $event;
+
+        return $this;
+    }
+
+    public function getEvent()
+    {
+        return $this->event ?? new Event();
+    }
+
     /**
      * Gets the event that will be used for the next event logged by call to logEvent() or queueEvent()
      *
@@ -188,6 +200,7 @@ class Amplitude
      *
      * @param null|array|\Zumba\Amplitude\Event Can pass in an event to set as the next event to run, or array to set
      *   properties on that event
+     * @deprecated Use setEvent and getEvent instead
      * @return \Zumba\Amplitude\Event
      */
     public function event($event = null)
@@ -239,7 +252,7 @@ class Amplitude
         if (empty($this->apiKey)) {
             throw new \LogicException(static::EXCEPTION_MSG_NO_API_KEY);
         }
-        $event = $this->event();
+        $event = $this->getEvent();
         if (!empty($eventProperties)) {
             $event->eventProperties = $eventProperties;
         }
@@ -269,7 +282,7 @@ class Amplitude
      */
     protected function setPersistentEventData()
     {
-        $event = $this->event();
+        $event = $this->getEvent();
         if (!empty($this->userId)) {
             $event->userId = $this->userId;
         }
@@ -308,7 +321,7 @@ class Amplitude
         if ($this->optOut) {
             return $this;
         }
-        $event = $this->event();
+        $event = $this->getEvent();
         if (!empty($eventProperties)) {
             $event->eventProperties = $eventProperties;
         }
