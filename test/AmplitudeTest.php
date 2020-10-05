@@ -2,6 +2,7 @@
 
 namespace Zumba\Amplitude\Test;
 
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Zumba\Amplitude\Amplitude;
 use Zumba\Amplitude\Event;
@@ -63,6 +64,7 @@ class AmplitudeTest extends TestCase
 
     public function testLogQueuedEventsEmptyQueue()
     {
+        /** @var Amplitude|MockObject $amplitude */
         $amplitude = $this->getMockBuilder(Amplitude::class)
             ->onlyMethods(['logEvent'])
             ->getMock()
@@ -108,6 +110,7 @@ class AmplitudeTest extends TestCase
         $eventType       = 'Event Type';
         $secondEventType = 'Second Event';
 
+        /** @var Amplitude|MockObject $amplitude */
         $amplitude = $this->getMockBuilder(Amplitude::class)
             ->onlyMethods(['sendEvent'])
             ->getMock()

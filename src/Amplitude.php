@@ -240,7 +240,9 @@ class Amplitude
             throw new \LogicException(static::EXCEPTION_MSG_NO_API_KEY);
         }
         $event = $this->event();
-        $event->set($eventProperties);
+        if (!empty($eventProperties)) {
+            $event->eventProperties = $eventProperties;
+        }
         $event->eventType = $eventType ?: $event->eventType;
         // Set the persistent options on the event
         $this->setPersistentEventData();
@@ -307,7 +309,9 @@ class Amplitude
             return $this;
         }
         $event = $this->event();
-        $event->set($eventProperties);
+        if (!empty($eventProperties)) {
+            $event->eventProperties = $eventProperties;
+        }
         $event->eventType = $eventType ?: $event->eventType;
 
         // Sanity checking
