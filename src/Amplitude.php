@@ -521,6 +521,7 @@ class Amplitude
         $this->checkForCurlError($ch);
         $this->checkForHttpError($ch, $response, $postFields);
 
+        $httpCode = curl_getinfo($ch, \CURLINFO_HTTP_CODE);
         $this->logger->log(
             Log\LogLevel::INFO,
             'Amplitude HTTP API response: ' . $response,
@@ -554,7 +555,7 @@ class Amplitude
 
         $httpCode = curl_getinfo($ch, \CURLINFO_HTTP_CODE);
         $this->logger->log(
-            $httpCode === 200 ? Log\LogLevel::INFO : Log\LogLevel::ERROR,
+            Log\LogLevel::INFO,
             'Amplitude HTTP API response: ' . $response,
             compact('httpCode', 'response', 'postFields')
         );
