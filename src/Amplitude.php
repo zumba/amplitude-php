@@ -7,7 +7,8 @@ class Amplitude
 {
     use Log\LoggerAwareTrait;
 
-    const AMPLITUDE_API_URL = 'https://api.amplitude.com/httpapi';
+    const AMPLITUDE_API_URL = 'https://api2.amplitude.com/httpapi';
+    const AMPLITUDE_IDENTIFY_URL = 'https://api.amplitude.com/identify';
 
     const EXCEPTION_MSG_NO_API_KEY = 'API Key is required to log an event';
     const EXCEPTION_MSG_NO_EVENT_TYPE = 'Event Type is required to log or queue an event';
@@ -475,26 +476,72 @@ class Amplitude
     }
 
     /**
+     * Use the Identify API to set the User ID for a particular Device ID or update user properties
+     * of a particular user without sending an event. You can modify Amplitude default user
+     * properties as well as custom user properties that you have defined. However, these updates
+     * will only affect events going forward.
+     *
+     * Note that api key, and either the user ID or device ID need to be set prior to calling this.
+     */
+    public function identify()
+    {
+        if ($this->optOut) {
+            return $this;
+        }
+
+        $this->sendIdentify();
+    }
+
+    protected function sendIdentify()
+    {
+        $this->checkForApiKey();
+        $ch = curl_init(static::AMPLITUDE_IDENTIFY_URL);
+        $this->checkCurlHandle($ch);
+
+        $identification = [
+            'user_properties' => $this->getUserProperties()
+        ];
+
+        if ($this->getUserId()) {
+            $identification['user_id'] = $this->getUserId();
+        }
+
+        if ($this->getDeviceId()) {
+            $identification['device_id'] = $this->getDeviceId();
+        }
+
+        $postFields = [
+            'api_key' => $this->apiKey,
+            'identification' => json_encode($identification)
+        ];
+        curl_setopt($ch, \CURLOPT_POSTFIELDS, $postFields);
+        // Always return instead of outputting response!
+        curl_setopt($ch, \CURLOPT_RETURNTRANSFER, true);
+        $response = curl_exec($ch);
+        $this->checkForCurlError($ch);
+        $this->checkForHttpError($ch, $response, $postFields);
+
+        $this->logger->log(
+            Log\LogLevel::INFO,
+            'Amplitude HTTP API response: ' . $response,
+            compact('httpCode', 'response', 'postFields')
+        );
+        curl_close($ch);
+    }
+
+    /**
      * Send the event currently set in $this->event to amplitude
      *
      * Requres $this->event and $this->apiKey to be set, otherwise it throws an exception.
      *
      * @return void
-     * @throws \InternalErrorException If event or api key not set
+     * @throws AmplitudeException If event or api key not set
      */
     protected function sendEvent()
     {
-        if (empty($this->event) || empty($this->apiKey)) {
-            throw new \InternalErrorException('Event or api key not set, cannot send event');
-        }
+        $this->checkForApiKey();
         $ch = curl_init(static::AMPLITUDE_API_URL);
-        if (!$ch) {
-            // Could be a number of PHP environment problems, log a critical error
-            $this->logger->critical(
-                'Call to curl_init(' . static::AMPLITUDE_API_URL . ') failed, unable to send Amplitude event'
-            );
-            return;
-        }
+        $this->checkCurlHandle($ch);
         $postFields = [
             'api_key' => $this->apiKey,
             'event' => json_encode($this->event),
@@ -503,20 +550,66 @@ class Amplitude
         // Always return instead of outputting response!
         curl_setopt($ch, \CURLOPT_RETURNTRANSFER, true);
         $response = curl_exec($ch);
-        $curlErrno = curl_errno($ch);
-        if ($curlErrno) {
-            $this->logger->critical(
-                'Curl error: ' . curl_error($ch),
-                compact('curlErrno', 'response', 'postFields')
-            );
-        } else {
-            $httpCode = curl_getinfo($ch, \CURLINFO_HTTP_CODE);
-            $this->logger->log(
-                $httpCode === 200 ? Log\LogLevel::INFO : Log\LogLevel::ERROR,
-                'Amplitude HTTP API response: ' . $response,
-                compact('httpCode', 'response', 'postFields')
-            );
-        }
+        $this->checkForCurlError($ch);
+
+        $httpCode = curl_getinfo($ch, \CURLINFO_HTTP_CODE);
+        $this->logger->log(
+            $httpCode === 200 ? Log\LogLevel::INFO : Log\LogLevel::ERROR,
+            'Amplitude HTTP API response: ' . $response,
+            compact('httpCode', 'response', 'postFields')
+        );
         curl_close($ch);
+    }
+
+    protected function checkForApiKey(): void
+    {
+        if (empty($this->event) || empty($this->apiKey)) {
+            throw new \Exception('Event or api key not set, cannot send event');
+        }
+    }
+
+    /**
+     * @param resource $ch
+     * @throws \Exception
+     */
+    protected function checkCurlHandle($ch): void
+    {
+        if (!$ch) {
+            // Could be a number of PHP environment problems, log a critical error
+            $message = 'Call to curl_init(' . static::AMPLITUDE_API_URL . ') failed, unable to send Amplitude event';
+            $this->logger->critical($message);
+            throw new \Exception($message);
+        }
+    }
+
+    /**
+     * @param resource $ch
+     * @throws AmplitudeException
+     */
+    protected function checkForCurlError($ch): void
+    {
+        if ($curlErrno = curl_errno($ch)) {
+            $message = 'Curl error: ' . curl_error($ch);
+            $context = compact('curlErrno', 'response', 'postFields');
+            $this->logger->critical($message, $context);
+            curl_close($ch);
+            throw new \Exception($message);
+        }
+    }
+
+    /**
+     * @param resource $ch
+     * @param bool $response
+     * @param array $postFields
+     * @throws AmplitudeException
+     */
+    protected function checkForHttpError($ch, bool $response, array $postFields): void
+    {
+        $httpCode = curl_getinfo($ch, \CURLINFO_HTTP_CODE);
+        $isErrorCode = 400 <= $httpCode && $httpCode <= 599;
+
+        if ($isErrorCode) {
+            throw new AmplitudeException('Amplitude HTTP API response: ' . $response, $httpCode, $postFields);
+        }
     }
 }

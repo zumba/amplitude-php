@@ -1,4 +1,6 @@
 composer.phar
-composer.lock
 /vendor/
 /build/
+coverage
+.phpunit.result.cache
+.idea
