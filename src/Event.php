@@ -58,6 +58,7 @@ class Event implements \JsonSerializable
     protected $availableVars = [
         'user_id' => 'string',
         'device_id' => 'string',
+        'session_id' => 'int',
         'event_type' => 'string',
         'time' => 'int',
         'event_properties' => 'array',
