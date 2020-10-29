@@ -15,9 +15,9 @@ class EventTest extends TestCase
      */
     public function testSet($name, $value, $expected, $msg)
     {
-        $event = new Event();
+        $event = new Event('test');
         $result = $event->set($name, $value);
-        $this->assertInstanceOf('\Zumba\Amplitude\Event', $result, 'get should return instance of itself');
+        $this->assertInstanceOf(Event::class, $result, 'get should return instance of itself');
         $this->assertEquals(json_encode($expected), json_encode($event), $msg);
     }
 
@@ -27,43 +27,43 @@ class EventTest extends TestCase
             [
                 'user_id',
                 'underscore',
-                ['user_id' => 'underscore'],
+                ['event_type' => 'test', 'user_id' => 'underscore'],
                 'Set built-in property directly',
             ],
             [
                 'userId',
                 'camel',
-                ['user_id' => 'camel'],
+                ['event_type' => 'test', 'user_id' => 'camel'],
                 'Set built-in property using camelcase, but setting the value using underscore',
             ],
             [
                 'productId',
                 'camel',
-                ['productId' => 'camel'],
+                ['event_type' => 'test', 'productId' => 'camel'],
                 'Set camelcase built-in property using camelcase',
             ],
             [
                 'product_id',
                 'under',
-                ['productId' => 'under'],
+                ['event_type' => 'test', 'productId' => 'under'],
                 'Set camelcase built-in property using underscore, still sets camelcase version',
             ],
             [
                 'revenue_type',
                 'under',
-                ['revenueType' => 'under'],
+                ['event_type' => 'test', 'revenueType' => 'under'],
                 'Set camelcase built-in property using underscore, still sets camelcase version',
             ],
             [
                 'customProp',
                 'custom',
-                ['event_properties' => ['customProp' => 'custom']],
+                ['event_type' => 'test', 'event_properties' => ['customProp' => 'custom']],
                 'Set not-built-in property in event_properties without changing name',
             ],
             [
                 'Custom With Space',
                 'Some value',
-                ['event_properties' => ['Custom With Space' => 'Some value']],
+                ['event_type' => 'test', 'event_properties' => ['Custom With Space' => 'Some value']],
                 'Set not-built-in property in event_properties without changing name',
             ],
         ];
@@ -71,7 +71,7 @@ class EventTest extends TestCase
 
     public function testSetArray()
     {
-        $event = new Event();
+        $event = new Event('test');
 
         $event->set(
             [
@@ -82,6 +82,7 @@ class EventTest extends TestCase
             ]
         );
         $expected = [
+            'event_type' => 'test',
             'device_id' => 'device',
             'user_id' => 'user',
             'productId' => 'product',
@@ -98,7 +99,7 @@ class EventTest extends TestCase
 
     public function testSetCasting()
     {
-        $event = new Event();
+        $event = new Event('test');
         $event->set('quantity', '10.5');
         $event->set('price', '1234.350');
 
@@ -107,79 +108,16 @@ class EventTest extends TestCase
         $this->assertSame(1234.35, $eventData['price']);
     }
 
-    /**
-     * @dataProvider getDataProvider
-     */
-    public function testGet($eventData, $getName, $expected, $msg)
-    {
-        $event = new Event($eventData);
-        $this->assertEquals($expected, $event->get($getName), $msg);
-    }
-
-    public function getDataProvider()
-    {
-        return [
-            [
-                ['user_id' => 'underscore'],
-                'user_id',
-                'underscore',
-                'Get built-in property directly',
-            ],
-            [
-                ['user_id' => 'camel'],
-                'userId',
-                'camel',
-                'Get built-in property using camelcase',
-            ],
-            [
-                ['productId' => 'camel'],
-                'productId',
-                'camel',
-                'Get camelcase built-in property using camelcase',
-            ],
-            [
-                ['productId' => 'under'],
-                'product_id',
-                'under',
-                'Get camelcase built-in property using underscore, still gets camelcase version',
-            ],
-            [
-                ['revenueType' => 'under'],
-                'revenue_type',
-                'under',
-                'Get camelcase built-in property using underscore, still gets camelcase version',
-            ],
-            [
-                ['event_properties' => ['customProp' => 'custom']],
-                'customProp',
-                'custom',
-                'Get not-built-in property in event_properties without changing name',
-            ],
-            [
-                ['event_properties' => ['custom_prop' => 'custom']],
-                'customProp',
-                null,
-                'Should not get custom property with camelcase name (if not initially set with camelcase),
-                    that should only work on built-in properties',
-            ],
-            [
-                ['event_properties' => ['Custom With Space' => 'Some value']],
-                'Custom With Space',
-                'Some value',
-                'Get not-built-in property in event_properties without changing name',
-            ],
-        ];
-    }
-
     public function testUnsetProperty()
     {
-        $event = new Event();
+        $event = new Event('test');
         $event->set('custom prop', 'value');
         $event->userId = 'user';
         $event->quantity = 50;
         $event->userProperties = ['prop' => 'value'];
         $this->assertEquals(
             [
+                'event_type' => 'test',
                 'event_properties' => ['custom prop' => 'value'],
                 'user_id' => 'user',
                 'quantity' => 50,
@@ -206,10 +144,10 @@ class EventTest extends TestCase
     public function testSetUserProperties()
     {
         $userProps = ['dob' => 'tomorrow', 'gender' => 'f'];
-        $event = new Event();
+        $event = new Event('test');
         $event->setUserProperties($userProps);
         $this->assertSame(
-            ['user_properties' => $userProps],
+            ['event_type' => 'test', 'user_properties' => $userProps],
             $event->toArray(),
             'Should set user properties in user_properties'
         );
@@ -221,7 +159,7 @@ class EventTest extends TestCase
         ];
         $event->setUserProperties($userProps2);
         $this->assertSame(
-            ['user_properties' => $expected],
+            ['event_type' => 'test', 'user_properties' => $expected],
             $event->toArray(),
             'Second call to setUserProperties should update properties, not remove existing'
         );

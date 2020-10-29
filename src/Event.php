@@ -58,6 +58,7 @@ class Event implements \JsonSerializable
     protected $availableVars = [
         'user_id' => 'string',
         'device_id' => 'string',
+        'session_id' => 'int',
         'event_type' => 'string',
         'time' => 'int',
         'event_properties' => 'array',
@@ -93,11 +94,9 @@ class Event implements \JsonSerializable
      *
      * @param array $data Initial data to set on the event
      */
-    public function __construct(array $data = [])
+    public function __construct(string $eventType)
     {
-        if (!empty($data)) {
-            $this->set($data);
-        }
+        $this->set('event_type', $eventType);
     }
 
     /**
