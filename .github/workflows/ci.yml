@@ -18,7 +18,7 @@ jobs:
     - name: Validate composer.json
       run: composer validate
     - name: Install dependencies
-      run: composer install --dev
+      run: composer install
     - name: Run test suite
       run: vendor/bin/phpunit --coverage-clover build/logs/clover.xml
     - name: PSR2 coverage
