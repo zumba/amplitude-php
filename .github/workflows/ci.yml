@@ -15,9 +15,11 @@ jobs:
     name: PHP ${{ matrix.php-version }}
     steps:
     - uses: actions/checkout@v2
-    - uses: shivammathur/setup-php@v2
-    - with:
-      php-version: ${{ matrix.php-version }}
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-version }}
+        coverage: none
     - name: Validate composer.json
       run: composer validate
     - name: Install dependencies
