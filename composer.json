@@ -17,6 +17,7 @@
     ],
     "require": {
         "ext-curl": "*",
+        "ext-json": "*",
         "php": ">=7.2",
         "psr/log": "^1.0 | ^2.0"
     },
