@@ -66,6 +66,7 @@ class Event implements \JsonSerializable
         'platform' => 'string',
         'os_name' => 'string',
         'os_version' => 'string',
+        'session_id' => 'string',
         'device_brand' => 'string',
         'device_manufacturer' => 'string',
         'device_model' => 'string',
