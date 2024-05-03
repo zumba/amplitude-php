@@ -87,6 +87,7 @@ class Event implements \JsonSerializable
         'ip' => 'string',
         'idfa' => 'string',
         'adid' => 'string',
+        'user_agent' => 'string',
     ];
 
     /**
