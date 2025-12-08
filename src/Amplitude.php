@@ -531,6 +531,5 @@ class Amplitude
                 compact('httpCode', 'response', 'postFields')
             );
         }
-        curl_close($ch);
     }
 }
